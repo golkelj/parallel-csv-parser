@@ -103,7 +103,6 @@ bool is_number(const string &s, long double &out) {
     while (j > i && isspace((unsigned char)s[j-1])) --j;
     if (i >= j) return false;
     t = s.substr(i, j-i);
-    // try stold
     try {
         size_t idx = 0;
         out = stold(t, &idx);
@@ -179,18 +178,18 @@ int main(int argc, char** argv) {
     auto header_cells = parse_csv_line(header);
     size_t ncols = header_cells.size();
 
-    // Read remainder of file lines into a vector (streaming version could chunk by bytes)
+    // read teh rest of the file 
     vector<string> all_lines;
     string line;
     while (getline(in, line)) all_lines.push_back(line);
 
-    // Split into roughly equal chunks by line count
+    // split into chunks
     vector<vector<string>> chunks(workers);
     for (size_t i = 0; i < all_lines.size(); ++i) {
         chunks[i % workers].push_back(all_lines[i]);
     }
 
-    // Launch worker threads
+    // threading 
     vector<PartialResult> partials(workers);
     vector<thread> ths;
     mutex m;
@@ -198,7 +197,7 @@ int main(int argc, char** argv) {
         ths.emplace_back([w, &chunks, ncols, &partials, &m]() {
             string wid = "worker-" + to_string(w);
             auto res = process_chunk(chunks[w], ncols, wid);
-            // store result (thread-safe)
+            // store result
             lock_guard<mutex> lk(m);
             partials[w] = std::move(res);
         });
